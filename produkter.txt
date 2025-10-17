@@ -1,0 +1,1 @@
+{'produkt_id': '1', 'produkt_namn': 'Kaffe', 'pris_typ': 'st', 'pris': 50.0}
