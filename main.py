@@ -24,6 +24,51 @@ class Produkt:
 
         return {"produkt_id": self.produkt_id, "produkt_namn": self.produkt_namn, "pris_typ": self.pris_typ, "pris": self.pris}
     
+    @classmethod # En funktion som enbart körs i klassen
+
+    def modify_produkt(cls): # cls står för class, istället för self
+
+        global produkt_lista
+
+        if not produkt_lista:
+            print("Produktlistan är tom.")
+
+        print("Produkter:\n")
+        visa_produkter(enter_input=False)
+        
+        try:
+            produkt_id = int(input("\nAnge produkt-id att ändra: "))
+        except ValueError:
+            print("Fel inmatning")
+            return
+        
+        produkt = produkt_lista.get(produkt_id)
+        if not produkt:
+            print("Id finns ej.")
+            return
+        
+        print(f"Aktivt val: {produkt['produkt_namn']} ({produkt['pris']} kr/{produkt['pris_typ']}")
+
+        new_name = input("Nytt namn: ")
+        new_price = input("Nytt pris: ")
+
+        if new_name:
+            produkt["produkt_namn"] = new_name
+
+        if new_price:
+            try:
+                produkt["pris"] = float(new_price)
+            except ValueError:
+                print("Fel inmatning.")
+                return
+        
+        produkt_lista[produkt_id] = produkt
+        spara_produkt(produkt_lista)
+        print(f"{produkt['produkt_namn']} uppdaterad. ")
+
+
+
+    
 ################################################################################
 
 class Varukorg: 
@@ -179,11 +224,13 @@ def lägg_till_produkt():
 
 ################################################################################
 
-def visa_produkter(): # Kanske kan köra en .join här istället.
+def visa_produkter(enter_input=True): # Kanske kan köra en .join här istället.
 
     for produkt_id, info in produkt_lista.items():
         print(f"Id {produkt_id}: {info['produkt_namn']} ({info['pris_typ']}) - {info['pris']} kr.")
-    input("Tryck enter för att gå tillbaka.")    
+
+    if enter_input:    
+        input("Tryck enter för att gå tillbaka.")    
 
 ################################################################################
 
@@ -203,6 +250,7 @@ def ladda_produktlistan():
             for rad in f:
                 produkt = ast.literal_eval(rad.strip()) # ast.literal_eval gör om text-strängen till en dictionary. strip tar bort onödiga tecken, typ \n, och mellanslag.
                 produkt["pris"] = float(produkt["pris"]) # Säkerställer att priset blir en float och ej en str.
+                produkt["produkt_id"] = int(produkt["produkt_id"])
                 produkt_lista[produkt["produkt_id"]] = produkt # Om produkt_id är 100 lägger den in 100 som huvudnyckel för produkten.
     except FileNotFoundError:
         print("Ingen produktlista hittad.")
@@ -228,20 +276,21 @@ def huvud_meny():
 
 def admin_meny():
 
-    option_list = ["1", "2", "3", "4", "0"]
+    option_list = ["1", "2", "3", "4", "5", "0"]
 
     while True:
 
-        print("1. Hantera produkt")
+        print("1. Ändra produkt")
         print("2. Lägg till produkt")
-        print("3. Visa alla produkter")
-        print("4. Hantera kampanjer")
-        print("<. Gå tillbaka till huvudmenyn.")
+        print("3. Ta bort produkt")
+        print("4. Visa alla produkter")
+        print("5. Hantera kampanjer")
+        print("0. Gå tillbaka till huvudmenyn.")
         val = input(">> ")
         if val not in option_list:
             print("Fel val")
         elif val == "1":
-            pass
+            Produkt.modify_produkt()
         elif val == "2":
             lägg_till_produkt()
         elif val == "3":
