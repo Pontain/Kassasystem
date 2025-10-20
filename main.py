@@ -5,9 +5,11 @@ from datetime import datetime
 #produkt_lista = {"100": {"produkt_id": 100, "produkt_namn": "kaffe", "pris_typ": "st", "pris": 75}}
 
 produkt_lista = {}
+campaigns = {}
 PRODUKT_FIL = "produkter.txt"
 KVITTO_MAPP = "Kvitton"
 KVITTO_NR = "kvittonr.txt"
+KAMPANJ_FIL = "Kampanjer.txt"
 
 ################################################################################
 
@@ -25,7 +27,6 @@ class Produkt:
         return {"produkt_id": self.produkt_id, "produkt_namn": self.produkt_namn, "pris_typ": self.pris_typ, "pris": self.pris}
     
     @classmethod # En funktion som enbart körs i klassen
-
     def modify_produkt(cls): # cls står för class, istället för self
 
         global produkt_lista
@@ -42,7 +43,9 @@ class Produkt:
             print("Fel inmatning")
             return
         
-        produkt = produkt_lista.get(produkt_id)
+        produkt = produkt_lista.get(produkt_id) # .get = hämta värdet för nyckeln (produkt_id), såhär: produkter = {"101": {"namn": "Kaffe", "pris": 75}}
+                                                #print(produkter.get("101")) → {'namn': 'Kaffe', 'pris': 75}
+                                                #print(produkter.get("999")) → None
         if not produkt:
             print("Id finns ej.")
             return
@@ -63,12 +66,45 @@ class Produkt:
                 return
         
         produkt_lista[produkt_id] = produkt
-        spara_produkt(produkt_lista)
+        spara_produkter(produkt_lista)
         print(f"{produkt['produkt_namn']} uppdaterad. ")
 
+    @classmethod
+    def remove_product(cls):
 
+        global produkt_lista
 
-    
+        if not produkt_lista:
+            print("Produktlistan är tom.")
+
+        print("Produkter:\n")
+        visa_produkter(enter_input=False)
+
+        try:
+            produkt_id = int(input("\nAnge produkt-id att ta bort: "))
+        except ValueError:
+            print("Fel inmatning.")
+            return
+
+        produkt = produkt_lista.get(produkt_id)
+
+        if not produkt:
+            print("Id finns ej")
+            return
+        
+        print(f"Aktivt val: {produkt['produkt_namn']} ({produkt['pris']} kr/{produkt['pris_typ']}")
+        confirm = input("Vill du ta bort denna produkt? (j/n) ")
+
+        if confirm == "j":
+            produkt_lista.pop(produkt_id)
+            spara_produkter(produkt_lista)
+            print("Produkt borttagen.")
+        elif confirm == "n":
+            print("Avbrutet.")
+            return
+        else:
+            print("Fel inmatning")
+
 ################################################################################
 
 class Varukorg: 
@@ -86,7 +122,18 @@ class Varukorg:
     def get_price(self, item):
         produkt = item["produkt"]
         antal = item["antal"]
-        return produkt["pris"] * antal
+        pris = produkt['pris']
+
+        campaign = campaigns.get(produkt["produkt_id"])
+        if campaign:
+            today = datetime.now().date()
+            start = datetime.strptime(campaign["start"], "%Y-%m-%d")
+            end = datetime.strptime(campaign["end"], "Y%-%m-%d")
+
+            if start <= today <= end:
+                pris = campaign["campaign_price"]
+
+        return pris * antal
 
     def skapa_kvittorader(self):
 
@@ -200,6 +247,7 @@ def ny_kund():
 
         else:
             produkt_id, antal = kassa_input.split()
+            produkt_id = int(produkt_id)
             antal = int(antal)
 
         if produkt_id in produkt_lista:
@@ -219,6 +267,7 @@ def lägg_till_produkt():
     pris = float(input("Ange pris: "))
 
     produkt = Produkt(produkt_id, produkt_namn, pris_typ, pris)
+    print(f"\n{produkt.produkt_namn} har lagst till.")
 
     spara_produkt(produkt)
 
@@ -226,6 +275,8 @@ def lägg_till_produkt():
 
 def visa_produkter(enter_input=True): # Kanske kan köra en .join här istället.
 
+    ladda_produktlistan()
+    print("\n")
     for produkt_id, info in produkt_lista.items():
         print(f"Id {produkt_id}: {info['produkt_namn']} ({info['pris_typ']}) - {info['pris']} kr.")
 
@@ -239,7 +290,38 @@ def spara_produkt(produkt: Produkt): # : Produkt är en hint, en ledtråd, ej et
     with open(PRODUKT_FIL, "a", encoding="utf-8") as f:
         f.write(str(produkt.skapa_produkt_i_listan()) + "\n") # Behöver konvertera dictionaryt till sträng då f.write enbart kan skriva text till fil.
                                                               # Gör en radbrytning, \n i slutet för att skapa rader.
- 
+
+ ################################################################################
+
+def spara_produkter(produkt_lista):
+
+    with open(PRODUKT_FIL, "w", encoding="utf-8") as f:
+        for produkt in produkt_lista.values():
+            f.write(str(produkt) + "\n")
+
+
+################################################################################
+
+def spara_kampanjer(campaigns):
+
+    with open(KAMPANJ_FIL, "w", encoding="utf-8") as f:
+        for campaign in campaigns.values():
+            f.write(str(campaign) + "\n")
+
+################################################################################
+
+def ladda_kampanjer(campaigns):
+
+    try:
+
+        with open(KAMPANJ_FIL, "r", encoding="utf-8") as f:
+            for rad in f:
+                campaign = ast.literal_eval(rad.strip())
+                produkt_id = int(campaign["produkt_id"])
+                campaigns[campaign] = 
+
+
+
 ################################################################################
 
 def ladda_produktlistan():
@@ -255,6 +337,45 @@ def ladda_produktlistan():
     except FileNotFoundError:
         print("Ingen produktlista hittad.")
     return produkt_lista
+
+################################################################################
+
+def add_campaign():
+
+    global campaigns
+    global produkt_lista
+
+    print("Produkter:")
+    visa_produkter(enter_input=False)
+
+    produkt_id = int(input("\nAnge produkt-id för kampanjen"))
+    if produkt_id not in produkt_lista:
+        print("Produkt finns ej.")
+        return
+    
+    print(f"\nKampanj för {produkt_lista[produkt_id]['produkt_namn']}\n")
+
+    try:
+        new_price = float(input("Ange nytt pris: "))
+    except ValueError:
+        print("Fel prisformat")
+        return
+
+    start_date = input("Ange startdatum (YYY-MM-DD)")
+    end_date = input("Ange slutdatum (YYY-MM-DD)")
+
+    try:
+        datetime.strptime(start_date, "%Y-%m-%d")
+        datetime.strptime(end_date, "Y%-%m-%d")
+    except ValueError:
+        print("Fel datumformat.")
+        return
+    
+    campaigns[produkt_id] = {"Campaign_price": new_price, "start": start_date, "end": end_date}
+    spara_kampanjer(campaigns)
+
+    print(f"Kampanj skapad för: {produkt_lista[produkt_id]['produkt_namn']}")
+    print(f"Nytt pris: {new_price} kr mellan {start_date} - {end_date}")
 
 ################################################################################
 
@@ -280,7 +401,7 @@ def admin_meny():
 
     while True:
 
-        print("1. Ändra produkt")
+        print("\n1. Ändra produkt")
         print("2. Lägg till produkt")
         print("3. Ta bort produkt")
         print("4. Visa alla produkter")
@@ -294,8 +415,10 @@ def admin_meny():
         elif val == "2":
             lägg_till_produkt()
         elif val == "3":
-            visa_produkter()
+            Produkt.remove_product()
         elif val == "4":
+            visa_produkter()
+        elif val == "5":
             pass
         elif val == "0":
             return

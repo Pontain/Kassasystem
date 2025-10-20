@@ -1,1 +1,2 @@
-{'produkt_id': '1', 'produkt_namn': 'Kaffe', 'pris_typ': 'st', 'pris': 50.0}
+{'produkt_id': 2, 'produkt_namn': 'Hallon', 'pris_typ': 'kg', 'pris': 20.0}
+{'produkt_id': 3, 'produkt_namn': 'Guld', 'pris_typ': 'kg', 'pris': 3000.0}
