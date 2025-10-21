@@ -128,7 +128,7 @@ class Varukorg:
         if campaign:
             today = datetime.now().date()
             start = datetime.strptime(campaign["start"], "%Y-%m-%d")
-            end = datetime.strptime(campaign["end"], "Y%-%m-%d")
+            end = datetime.strptime(campaign["end"], "%Y-%m-%d")
 
             if start <= today <= end:
                 pris = campaign["campaign_price"]
@@ -285,6 +285,18 @@ def visa_produkter(enter_input=True): # Kanske kan köra en .join här istället
 
 ################################################################################
 
+def show_campaigns(enter_input=True):
+
+    ladda_kampanjer()
+    print("\n")
+    for campaign, info in campaigns.items():
+        print(f"{info['campaign_name']} - Kampanjpris: {info['campaign_price']} kr mellan {info['start']} - {info['end']} ")
+
+    if enter_input:
+        input("\nTryck enter för att gå tillbaka.\n")
+
+################################################################################
+
 def spara_produkt(produkt: Produkt): # : Produkt är en hint, en ledtråd, ej ett krav. Då variablen produkt är satt till klassen Produkt kan det verka förvirrande.
 
     with open(PRODUKT_FIL, "a", encoding="utf-8") as f:
@@ -304,23 +316,28 @@ def spara_produkter(produkt_lista):
 
 def spara_kampanjer(campaigns):
 
-    with open(KAMPANJ_FIL, "w", encoding="utf-8") as f:
+    with open(KAMPANJ_FIL, "a", encoding="utf-8") as f:
         for campaign in campaigns.values():
             f.write(str(campaign) + "\n")
 
 ################################################################################
 
-def ladda_kampanjer(campaigns):
+def ladda_kampanjer():
 
+    global campaigns
+    campaigns = {}
     try:
 
         with open(KAMPANJ_FIL, "r", encoding="utf-8") as f:
             for rad in f:
                 campaign = ast.literal_eval(rad.strip())
                 produkt_id = int(campaign["produkt_id"])
-                campaigns[campaign] = 
+                campaign["campaign_price"] = float(campaign["campaign_price"])
+                campaigns[produkt_id] = campaign
+    except FileNotFoundError:
+        print("Kampanjlistan är tom.\n")
 
-
+    return campaigns
 
 ################################################################################
 
@@ -348,12 +365,14 @@ def add_campaign():
     print("Produkter:")
     visa_produkter(enter_input=False)
 
-    produkt_id = int(input("\nAnge produkt-id för kampanjen"))
+    produkt_id = int(input("\nAnge vilket produkt-id som ska kampanjeras"))
     if produkt_id not in produkt_lista:
         print("Produkt finns ej.")
         return
     
-    print(f"\nKampanj för {produkt_lista[produkt_id]['produkt_namn']}\n")
+    campaign_name = input("Kampanjnamn: ")
+
+    print(f"\nKampanj {campaign_name} för {produkt_lista[produkt_id]['produkt_namn']}\n")
 
     try:
         new_price = float(input("Ange nytt pris: "))
@@ -361,21 +380,38 @@ def add_campaign():
         print("Fel prisformat")
         return
 
-    start_date = input("Ange startdatum (YYY-MM-DD)")
-    end_date = input("Ange slutdatum (YYY-MM-DD)")
+    start_date = input("Ange startdatum (YYYY-MM-DD)")
+    end_date = input("Ange slutdatum (YYYY-MM-DD)")
 
     try:
         datetime.strptime(start_date, "%Y-%m-%d")
-        datetime.strptime(end_date, "Y%-%m-%d")
+        datetime.strptime(end_date, "%Y-%m-%d")
     except ValueError:
         print("Fel datumformat.")
         return
     
-    campaigns[produkt_id] = {"Campaign_price": new_price, "start": start_date, "end": end_date}
+    campaigns[produkt_id] = {"produkt_id": produkt_id, "campaign_name": campaign_name, "campaign_price": new_price, "start": start_date, "end": end_date}
     spara_kampanjer(campaigns)
 
     print(f"Kampanj skapad för: {produkt_lista[produkt_id]['produkt_namn']}")
     print(f"Nytt pris: {new_price} kr mellan {start_date} - {end_date}")
+
+################################################################################
+
+def remove_campaign():
+
+    global campaigns
+    ladda_kampanjer()
+
+    show_campaigns(enter_input=False)
+
+    campaign_name = input("Skriv namnet på den kampanj du vill ta bort: ").lower()
+
+    if campaign_name in campaigns:
+        campaigns.pop[campaign_name]
+        
+
+
 
 ################################################################################
 
@@ -407,7 +443,7 @@ def admin_meny():
         print("4. Visa alla produkter")
         print("5. Hantera kampanjer")
         print("0. Gå tillbaka till huvudmenyn.")
-        val = input(">> ")
+        val = input("\n>> ")
         if val not in option_list:
             print("Fel val")
         elif val == "1":
@@ -419,13 +455,39 @@ def admin_meny():
         elif val == "4":
             visa_produkter()
         elif val == "5":
-            pass
+            campaign_menu()
         elif val == "0":
             return
 
 ################################## Kör programmet ##############################################
 
+def campaign_menu():
+
+    option_list = ["1", "2", "3", "0"]
+
+    while True:
+
+        print("1. Skapa ny kampanj.")
+        print("2. Ta bort kampanj.")
+        print("3. Visa alla kampanjer.")
+        print("0. Gå tillbaka.")
+        val = input("\n>>")
+        if val not in option_list:
+            print("Fel val.")
+        elif val == "1":
+            add_campaign()
+        elif val == "2":
+            pass#remove_campaign
+        elif val == "3":
+            show_campaigns()
+        elif val == "0":
+            return
+        
+
+################################################################################
+
 ladda_produktlistan()
+ladda_kampanjer()
 
 while True:    
 

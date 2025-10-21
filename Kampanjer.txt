@@ -1,0 +1,1 @@
+{'produkt_id': 2, 'campaign_name': 'Hallonrabatt', 'campaign_price': 20.0, 'start': '2025-10-24', 'end': '2025-10-27'}
