@@ -1,1 +1,6 @@
 {'produkt_id': 2, 'campaign_name': 'Hallonrabatt', 'campaign_price': 20.0, 'start': '2025-10-24', 'end': '2025-10-27'}
+{'produkt_id': 2, 'campaign_name': 'Hallonrabatt', 'campaign_price': 20.0, 'start': '2025-10-24', 'end': '2025-10-27'}
+{'produkt_id': 3, 'campaign_name': 'Guldrabatt', 'campaign_price': 2000.0, 'start': '2025-10-23', 'end': '2025-10-25'}
+{'produkt_id': 2, 'campaign_name': 'Hallonrabatt', 'campaign_price': 20.0, 'start': '2025-10-24', 'end': '2025-10-27'}
+{'produkt_id': 3, 'campaign_name': 'Guldrabatt', 'campaign_price': 2000.0, 'start': '2025-10-23', 'end': '2025-10-25'}
+{'produkt_id': 4, 'campaign_name': 'Ginsengrabatt', 'campaign_price': 140.0, 'start': '2025-10-21', 'end': '2025-10-25'}
