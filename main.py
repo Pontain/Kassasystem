@@ -125,17 +125,20 @@ class Varukorg:
         print(f"{antal} x {produkt['produkt_namn']}")
 
     def get_price(self, item):
+
         produkt = item["produkt"]
         antal = item["antal"]
         pris = produkt['pris']
 
-        campaign = campaigns.get(produkt["produkt_id"])
-        if campaign:
-            today = datetime.now().date()
+        campaign_list = campaigns.get(produkt["produkt_id"], [])
+
+        today = datetime.now().date()
+
+        for campaign in campaign_list:
+           
             start = datetime.strptime(campaign["start"], "%Y-%m-%d").date() # Allt behöver vara .date för att kunna jämföras, annars krasch
             end = datetime.strptime(campaign["end"], "%Y-%m-%d").date() # strptime = STRingParseTIME -> gör om en str till ett datumobjekt
                                                                         # strftime = STRingFormatTIME -> gör om ett datumobjekt till en str.
-
             if start <= today <= end:
                 pris = campaign["campaign_price"]
 
@@ -154,16 +157,19 @@ class Varukorg:
             
             kvittorad = (f"{produkt['produkt_namn']} ({antal} {produkt['pris_typ']}) - {pris:.2f} kr.") # .2f gör att priset alltid visas med två decimaler
                   
-            campaign = campaigns.get(produkt["produkt_id"])
+            campaign_list = campaigns.get(produkt["produkt_id"], [])
 
-            if campaign:
-                today = datetime.now().date()
+            today = datetime.now().date()
+
+            for campaign in campaign_list:
+                
                 start = datetime.strptime(campaign["start"], "%Y-%m-%d").date()
                 end = datetime.strptime(campaign["end"], "%Y-%m-%d").date()
 
                 if start <= today <= end:
                     kvittorad = (f"{produkt['produkt_namn']} ({antal} {produkt['pris_typ']}) - {pris:.2f} kr. (Kampanj)")
-                                         
+                    break
+
             kvittorader.append(kvittorad)
                                                                                                               # : i f-sträng startar formateringsregeln.
         return kvittorader, total
@@ -239,12 +245,14 @@ class Kvitto:
 def ny_kund():
 
     varukorg = Varukorg()
+    print("\nProdukter:\n")
+    visa_produkter(enter_input=False)
     
     print("\nNy kund\n\n< för att gå tillbaka, PAY för betalning.\n")
 
     while True:
 
-        print("Ange PLU och antal med mellanslag emellan: ")
+        print("Ange Id och antal med mellanslag emellan: ")
         kassa_input = input(">> ").strip().upper() # .strip är bra ifall man råkar tex skriva in ett mellanslag, strip tar bort sånt.
 
         if kassa_input == "PAY":
@@ -257,16 +265,27 @@ def ny_kund():
                 print(f"\n{terminal_kvitto}")
 
                 varukorg = Varukorg() # Nollställer varukorgen då klassen anropas på nytt.
-                print("Ny kund\n\n< för att gå tillbaka, PAY för betalning.\n")
+                print("\nProdukter:\n")
+                visa_produkter(enter_input=False)
+                print("\nNy kund\n\n< för att gå tillbaka, PAY för betalning.\n")
                 continue
 
         elif kassa_input == "<":
             break
 
         else:
-            produkt_id, antal = kassa_input.split()
-            produkt_id = int(produkt_id)
-            antal = int(antal)
+
+            id_antal = kassa_input.split()
+            
+            if len(id_antal) != 2:
+                print("Fel format, Ange Id och antal med mellanslag emellan")
+                continue
+            try:
+                produkt_id = int(id_antal[0])
+                antal = int(id_antal[1])
+            except ValueError:
+                print("Enbart siffror accepteras")
+                continue
 
         if produkt_id in produkt_lista:
             varukorg.add_item(produkt_lista[produkt_id], antal) # Skickar vald produkt till add_item-funktionen i Varukorg-klassen.
@@ -279,10 +298,20 @@ def ny_kund():
 
 def lägg_till_produkt():
 
-    produkt_id = input("Ange produkt-id: ")
-    produkt_namn = input("Ange namn på produkt: ")
-    pris_typ = input("Ange pristyp, st eller kg: ")
-    pris = float(input("Ange pris: "))
+    try:
+        produkt_id = int(input("Ange produkt-id: "))
+        if produkt_id in produkt_lista:
+            print("Det id:t finns redan")
+            return
+        produkt_namn = input("Ange namn på produkt: ")
+        pris_typ = input("Ange pristyp, st eller kg: ").lower()
+        if pris_typ not in ("st", "kg"):
+            print("Det ska var st eller kg, inget annat")
+            return        
+        pris = float(input("Ange pris: "))
+    except ValueError:
+        print("Fel inmatning")
+        return
 
     produkt = Produkt(produkt_id, produkt_namn, pris_typ, pris)
     print(f"\n{produkt.produkt_namn} har lagst till.")
@@ -314,12 +343,16 @@ def save_product(produkt: Produkt): # : Produkt är en hint, en ledtråd, ej ett
 def save_products(produkt_lista):
 
     with open(PRODUKT_FIL, "w", encoding="utf-8") as f:
-        for produkt in produkt_lista.values():
+        for produkt_id in sorted(produkt_lista.keys()):
+            produkt = produkt_lista[produkt_id]
             f.write(str(produkt) + "\n")
 
 ################################################################################
 
 def ladda_produktlistan():
+
+    global produkt_lista
+    produkt_lista = {}
 
     try:
 
@@ -331,6 +364,9 @@ def ladda_produktlistan():
                 produkt_lista[produkt["produkt_id"]] = produkt # Om produkt_id är 100 lägger den in 100 som huvudnyckel för produkten.
     except FileNotFoundError:
         print("Ingen produktlista hittad.")
+
+    produkt_lista = dict(sorted(produkt_lista.items()))
+
     return produkt_lista
 
 ################################################################################
@@ -346,15 +382,13 @@ def show_campaigns(enter_input=True):
     
         if enter_input:
             input("\nTryck enter för att gå tillbaka.\n")
-    
-    print("\n")
-
+            return
+        
     for campaign_list in campaigns.values():
         for campaign in campaign_list:
-            print(f"{campaign['campaign_name']}\n")
+            print(f"{campaign['campaign_name']}")
             print(f"Pris: {campaign['campaign_price']} kr.")
             print(f"Gäller: {campaign['start']} - {campaign['end']}\n")
-
 
     if enter_input:
         input("\nTryck enter för att gå tillbaka.\n")
@@ -399,22 +433,26 @@ def add_campaign():
     global campaigns
     global produkt_lista
 
-    print("Produkter:")
+    print("Produkter:\n")
     visa_produkter(enter_input=False)
 
-    produkt_id = int(input("\nAnge vilket produkt-id som ska kampanjeras: "))
-    if produkt_id not in produkt_lista:
-        print("Produkt finns ej.")
+    try:
+        produkt_id = int(input("\nAnge vilket produkt-id som ska kampanjeras: "))
+        if produkt_id not in produkt_lista:
+            print("Produkt finns ej.")
+            return
+    except ValueError:
+        print("Enbart siffror i produkt-id\n")
         return
-    
+
     campaign_name = input("Kampanjnamn: ")
 
-    print(f"\nKampanj {campaign_name} för {produkt_lista[produkt_id]['produkt_namn']}\n")
+    print(f"\nKampanj: {campaign_name} för {produkt_lista[produkt_id]['produkt_namn']}\n")
 
     try:
         new_price = float(input("Ange nytt pris: "))
     except ValueError:
-        print("Fel prisformat")
+        print("Fel prisformat\n")
         return
 
     start_date = input("Ange startdatum (YYYY-MM-DD)")
@@ -424,7 +462,7 @@ def add_campaign():
         datetime.strptime(start_date, "%Y-%m-%d")
         datetime.strptime(end_date, "%Y-%m-%d")
     except ValueError:
-        print("Fel datumformat.")
+        print("Fel datumformat.\n")
         return
     
     if produkt_id not in campaigns:
@@ -434,7 +472,7 @@ def add_campaign():
 
     spara_kampanjer(campaigns)
 
-    print(f"\nKampanj skapad för: {produkt_lista[produkt_id]['produkt_namn']}")
+    print(f"\nKampanj: {campaign_name} skapad för: {produkt_lista[produkt_id]['produkt_namn']}")
     print(f"Nytt pris: {new_price} kr mellan {start_date} - {end_date}\n")
 
 ################################################################################
@@ -447,7 +485,7 @@ def remove_campaign():
         print("Det finns inga kampanjer.")
         return
 
-    print("Kampanjer:")
+    print("Kampanjer:\n")
     show_campaigns(enter_input=False)
 
     campaign_name = input("\nSkriv namnet på den kampanj du vill ta bort: ").lower()
@@ -461,7 +499,12 @@ def remove_campaign():
                 if confirm == "j":
                     campaign_list.remove(campaign)
                     campaign_exist = True
-                    print(f"{campaign['campaign_name']} borttagen.")
+                    print(f"{campaign['campaign_name']} borttagen.\n")
+                elif confirm == "n":
+                    print("Avbrutet.\n")
+                    return
+                else:
+                    print("fel inmatning")
 
     if campaign_exist == False:
         print("Den kampanjen finns ej\n")
