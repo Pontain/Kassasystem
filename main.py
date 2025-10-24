@@ -2,14 +2,19 @@ import ast
 import os
 from datetime import datetime
 
+BASE_PATH = os.path.dirname(os.path.abspath(__file__)) # ABSolute fil-väg, __file__ = main.py dirname tar bort filnamnet och gör sökvägen enbart till mappen där filen finns.
+
 #produkt_lista = {"100": {"produkt_id": 100, "produkt_namn": "kaffe", "pris_typ": "st", "pris": 75}}
 
 produkt_lista = {}
 campaigns = {}
-PRODUKT_FIL = "produkter.txt"
-KVITTO_MAPP = "Kvitton"
-KVITTO_NR = "kvittonr.txt"
-KAMPANJ_FIL = "Kampanjer.txt"
+
+# Den ville öppna filer på fel ställen så fick lägga till extra os. grejjer för att rätta till det.
+
+PRODUKT_FIL = os.path.join(BASE_PATH, "produkter.txt") #.join skapar en filväg som funkar vart programmet än körs från, som tex från en genväg.
+KAMPANJ_FIL = os.path.join(BASE_PATH, "kampanjer.txt")
+KVITTO_MAPP = os.path.join(BASE_PATH, "Kvitton")
+KVITTO_NR = os.path.join(BASE_PATH, "kvittonr.txt")
 
 ################################################################################
 
@@ -66,7 +71,7 @@ class Produkt:
                 return
         
         produkt_lista[produkt_id] = produkt
-        spara_produkter(produkt_lista)
+        save_products(produkt_lista)
         print(f"{produkt['produkt_namn']} uppdaterad. ")
 
     @classmethod
@@ -92,12 +97,12 @@ class Produkt:
             print("Id finns ej")
             return
         
-        print(f"Aktivt val: {produkt['produkt_namn']} ({produkt['pris']} kr/{produkt['pris_typ']}")
+        print(f"Aktivt val: {produkt['produkt_namn']}")
         confirm = input("Vill du ta bort denna produkt? (j/n) ")
 
         if confirm == "j":
             produkt_lista.pop(produkt_id)
-            spara_produkter(produkt_lista)
+            save_products(produkt_lista)
             print("Produkt borttagen.")
         elif confirm == "n":
             print("Avbrutet.")
@@ -282,7 +287,7 @@ def lägg_till_produkt():
     produkt = Produkt(produkt_id, produkt_namn, pris_typ, pris)
     print(f"\n{produkt.produkt_namn} har lagst till.")
 
-    spara_produkt(produkt)
+    save_product(produkt)
 
 ################################################################################
 
@@ -298,19 +303,7 @@ def visa_produkter(enter_input=True): # Kanske kan köra en .join här istället
 
 ################################################################################
 
-def show_campaigns(enter_input=True):
-
-    ladda_kampanjer()
-    print("\n")
-    for campaign, info in campaigns.items():
-        print(f"{info['campaign_name']} - Kampanjpris: {info['campaign_price']} kr mellan {info['start']} - {info['end']} ")
-
-    if enter_input:
-        input("\nTryck enter för att gå tillbaka.\n")
-
-################################################################################
-
-def spara_produkt(produkt: Produkt): # : Produkt är en hint, en ledtråd, ej ett krav. Då variablen produkt är satt till klassen Produkt kan det verka förvirrande.
+def save_product(produkt: Produkt): # : Produkt är en hint, en ledtråd, ej ett krav. Då variablen produkt är satt till klassen Produkt kan det verka förvirrande.
 
     with open(PRODUKT_FIL, "a", encoding="utf-8") as f:
         f.write(str(produkt.skapa_produkt_i_listan()) + "\n") # Behöver konvertera dictionaryt till sträng då f.write enbart kan skriva text till fil.
@@ -318,38 +311,11 @@ def spara_produkt(produkt: Produkt): # : Produkt är en hint, en ledtråd, ej et
 
  ################################################################################
 
-def spara_produkter(produkt_lista):
+def save_products(produkt_lista):
 
     with open(PRODUKT_FIL, "w", encoding="utf-8") as f:
         for produkt in produkt_lista.values():
             f.write(str(produkt) + "\n")
-
-################################################################################
-
-def spara_kampanjer(campaigns):
-
-    with open(KAMPANJ_FIL, "w", encoding="utf-8") as f:
-        for campaign in campaigns.values():
-            f.write(str(campaign) + "\n")
-
-################################################################################
-
-def ladda_kampanjer():
-
-    global campaigns
-    campaigns = {}
-    try:
-
-        with open(KAMPANJ_FIL, "r", encoding="utf-8") as f:
-            for rad in f:
-                campaign = ast.literal_eval(rad.strip())
-                produkt_id = int(campaign["produkt_id"])
-                campaign["campaign_price"] = float(campaign["campaign_price"])
-                campaigns[produkt_id] = campaign
-    except FileNotFoundError:
-        print("Kampanjlistan är tom.\n")
-
-    return campaigns
 
 ################################################################################
 
@@ -366,6 +332,65 @@ def ladda_produktlistan():
     except FileNotFoundError:
         print("Ingen produktlista hittad.")
     return produkt_lista
+
+################################################################################
+
+def show_campaigns(enter_input=True):
+
+    global campaigns
+
+    ladda_kampanjer()
+
+    if not campaigns:
+        print("Det finns inga kampanjer.")
+    
+        if enter_input:
+            input("\nTryck enter för att gå tillbaka.\n")
+    
+    print("\n")
+
+    for campaign_list in campaigns.values():
+        for campaign in campaign_list:
+            print(f"{campaign['campaign_name']}\n")
+            print(f"Pris: {campaign['campaign_price']} kr.")
+            print(f"Gäller: {campaign['start']} - {campaign['end']}\n")
+
+
+    if enter_input:
+        input("\nTryck enter för att gå tillbaka.\n")
+
+################################################################################
+
+def spara_kampanjer(campaigns):
+
+    with open(KAMPANJ_FIL, "w", encoding="utf-8") as f:
+        for campaign_list in campaigns.values():
+            for campaign in campaign_list:
+                f.write(str(campaign) + "\n")
+
+################################################################################
+
+def ladda_kampanjer():
+
+    global campaigns
+    campaigns = {}
+    try:
+
+        with open(KAMPANJ_FIL, "r", encoding="utf-8") as f:
+            for rad in f:
+                campaign = ast.literal_eval(rad.strip())
+                produkt_id = int(campaign["produkt_id"])
+                campaign["campaign_price"] = float(campaign["campaign_price"])
+
+                if produkt_id not in campaigns:
+                    campaigns[produkt_id] = []
+
+                campaigns[produkt_id].append(campaign)
+
+    except FileNotFoundError:
+        print("Kampanjlistan är tom.\n")
+
+    return campaigns
 
 ################################################################################
 
@@ -402,7 +427,11 @@ def add_campaign():
         print("Fel datumformat.")
         return
     
-    campaigns[produkt_id] = {"produkt_id": produkt_id, "campaign_name": campaign_name, "campaign_price": new_price, "start": start_date, "end": end_date}
+    if produkt_id not in campaigns:
+        campaigns[produkt_id] = []
+
+    campaigns[produkt_id].append({"produkt_id": produkt_id, "campaign_name": campaign_name, "campaign_price": new_price, "start": start_date, "end": end_date})
+
     spara_kampanjer(campaigns)
 
     print(f"\nKampanj skapad för: {produkt_lista[produkt_id]['produkt_namn']}")
@@ -416,15 +445,29 @@ def remove_campaign():
 
     if not campaigns:
         print("Det finns inga kampanjer.")
+        return
 
     print("Kampanjer:")
     show_campaigns(enter_input=False)
 
-    produkt_id = input("\nSkriv in produkt_id på den kampanj du vill ta bort: ").lower()
+    campaign_name = input("\nSkriv namnet på den kampanj du vill ta bort: ").lower()
 
-    if campaign_name in campaigns:
-        campaigns.pop[campaign_name]
-        
+    campaign_exist = False
+
+    for campaign_list in campaigns.values():
+        for campaign in campaign_list:
+            if campaign["campaign_name"].lower() == campaign_name:
+                confirm = input(f"Vill du ta bort {campaign['campaign_name']}? (j/n): ")
+                if confirm == "j":
+                    campaign_list.remove(campaign)
+                    campaign_exist = True
+                    print(f"{campaign['campaign_name']} borttagen.")
+
+    if campaign_exist == False:
+        print("Den kampanjen finns ej\n")
+
+    spara_kampanjer(campaigns)
+
 ################################################################################
 
 def huvud_meny():
@@ -489,7 +532,7 @@ def campaign_menu():
         elif val == "1":
             add_campaign()
         elif val == "2":
-            pass#remove_campaign
+            remove_campaign()
         elif val == "3":
             show_campaigns()
         elif val == "0":

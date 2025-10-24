@@ -1,3 +1,3 @@
-{'produkt_id': 2, 'produkt_namn': 'Hallon', 'pris_typ': 'kg', 'pris': 20.0}
+{'produkt_id': 2, 'produkt_namn': 'Hallon', 'pris_typ': 'kg', 'pris': 30.0}
 {'produkt_id': 3, 'produkt_namn': 'Guld', 'pris_typ': 'kg', 'pris': 3000.0}
 {'produkt_id': 4, 'produkt_namn': 'Ginseng', 'pris_typ': 'kg', 'pris': 150.0}
