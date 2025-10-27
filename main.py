@@ -49,8 +49,8 @@ class Produkt:
             return
         
         produkt = produkt_lista.get(produkt_id) # .get = hämta värdet för nyckeln (produkt_id), såhär: produkter = {"101": {"namn": "Kaffe", "pris": 75}}
-                                                #print(produkter.get("101")) → {'namn': 'Kaffe', 'pris': 75}
-                                                #print(produkter.get("999")) → None
+                                                # print(produkter.get("101")) → {'namn': 'Kaffe', 'pris': 75}
+                                                # print(produkter.get("999")) → None
         if not produkt:
             print("Id finns ej.")
             return
@@ -112,7 +112,7 @@ class Produkt:
 
 ################################################################################
 
-class Varukorg: 
+class Varukorg: # Hanterar kundens inköp
 
     def __init__(self):
         
@@ -303,11 +303,13 @@ def lägg_till_produkt():
         if produkt_id in produkt_lista:
             print("Det id:t finns redan")
             return
+        
         produkt_namn = input("Ange namn på produkt: ")
         pris_typ = input("Ange pristyp, st eller kg: ").lower()
         if pris_typ not in ("st", "kg"):
             print("Det ska var st eller kg, inget annat")
-            return        
+            return   
+             
         pris = float(input("Ange pris: "))
     except ValueError:
         print("Fel inmatning")
@@ -362,6 +364,7 @@ def ladda_produktlistan():
                 produkt["pris"] = float(produkt["pris"]) # Säkerställer att priset blir en float och ej en str.
                 produkt["produkt_id"] = int(produkt["produkt_id"])
                 produkt_lista[produkt["produkt_id"]] = produkt # Om produkt_id är 100 lägger den in 100 som huvudnyckel för produkten.
+                
     except FileNotFoundError:
         print("Ingen produktlista hittad.")
 
