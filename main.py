@@ -165,9 +165,11 @@ class Varukorg: # Hanterar kundens inköp
                 
                 start = datetime.strptime(campaign["start"], "%Y-%m-%d").date()
                 end = datetime.strptime(campaign["end"], "%Y-%m-%d").date()
+                campaign_name = campaign["campaign_name"]
+                campaign_price = campaign["campaign_price"]
 
                 if start <= today <= end:
-                    kvittorad = (f"{produkt['produkt_namn']} ({antal} {produkt['pris_typ']}) - {pris:.2f} kr. (Kampanj)")
+                    kvittorad = (f"{produkt['produkt_namn']} ({antal} {produkt['pris_typ']}) - {pris:.2f} kr. \nKampanj: {campaign_name} ({campaign_price} kr / {produkt['pris_typ']})\n")
                     break
 
             kvittorader.append(kvittorad)
@@ -253,7 +255,7 @@ def ny_kund():
     while True:
 
         print("Ange Id och antal med mellanslag emellan: ")
-        kassa_input = input(">> ").strip().upper() # .strip är bra ifall man råkar tex skriva in ett mellanslag, strip tar bort sånt.
+        kassa_input = input(">> ").strip() # .strip är bra ifall man råkar tex skriva in ett mellanslag, strip tar bort sånt.
 
         if kassa_input == "PAY":
             if not varukorg.varor:
@@ -265,10 +267,7 @@ def ny_kund():
                 print(f"\n{terminal_kvitto}")
 
                 varukorg = Varukorg() # Nollställer varukorgen då klassen anropas på nytt.
-                print("\nProdukter:\n")
-                visa_produkter(enter_input=False)
-                print("\nNy kund\n\n< för att gå tillbaka, PAY för betalning.\n")
-                continue
+                break
 
         elif kassa_input == "<":
             break
@@ -278,11 +277,15 @@ def ny_kund():
             id_antal = kassa_input.split()
             
             if len(id_antal) != 2:
-                print("Fel format, Ange Id och antal med mellanslag emellan")
+                print("Fel format, Ange Id och antal med mellanslag emellan\n")
                 continue
             try:
                 produkt_id = int(id_antal[0])
                 antal = int(id_antal[1])
+                if antal < 1:
+                    print("Enbart positiva antal")
+                    continue
+
             except ValueError:
                 print("Enbart siffror accepteras")
                 continue

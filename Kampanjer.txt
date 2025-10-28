@@ -1,1 +1,2 @@
 {'produkt_id': 3, 'campaign_name': 'Guldrabatt', 'campaign_price': 2000.0, 'start': '2025-10-23', 'end': '2025-10-27'}
+{'produkt_id': 7, 'campaign_name': 'skog2025', 'campaign_price': 4.0, 'start': '2025-10-28', 'end': '2025-10-29'}
